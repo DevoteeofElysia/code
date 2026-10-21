@@ -1,2 +1,215 @@
 # code
 粘贴一些小练笔
+#include<stdio.h>
+#include<stdlib.h>
+#include<time.h>
+char arr[10][15];
+void origin(char arr[10][15]);
+void output(char arr[10][15]);
+int choose();
+void player(char arr[10][15], int* p);
+void random(char arr[10][15], int* p);
+int AIplug(int brr[3][3], char arr[10][15], char set);
+void AI(char arr[10][15], int* p);
+int judge(char arr[10][15], int sum);
+void gamebody(char arr[10][15]);
+
+int main()
+{
+	origin(arr);
+	gamebody(arr);
+	return 0;
+}
+
+int AIplug(int brr[3][3], char arr[10][15],char set)//作为AI模式函数的里函数
+{
+	int z = 0;
+	for (int i = 0;i < 3;i++, z++)
+	{
+		if (brr[0][i] == (int)(set + set + ' '))
+		{
+			for (int j = 0;j < 3;j++)
+				if (arr[2 * j + 1][4 * i + 2] == ' ')
+					arr[2 * j + 1][4 * i + 2] = 'o';
+			return 1;
+		}
+		if (brr[1][i] == (int)(set + set + ' '))
+		{
+			for (int j = 0;j < 3;j++)
+				if (arr[2 * i + 1][4 * j + 2] == ' ')
+					arr[2 * i + 1][4 * j + 2] = 'o';
+			return 1;
+		}
+		if (brr[2][0] == (int)(set + set + ' '))
+			if (arr[2 * z + 1][4 * i + 2] == ' ')
+			{
+				arr[2 * z + 1][4 * i + 2] = 'o';
+				return 1;
+			}
+		if (brr[2][1] == (int)(set + set + ' '))
+			if (arr[2 * z + 1][4 * (2 - i) + 2] == ' ')
+			{
+				arr[2 * z + 1][4 * (2 - i) + 2] = 'o';
+				return 1;
+			}
+	}
+	return 0;
+}
+void AI(char arr[10][15], int* p)
+{
+	int brr[3][3] = {0};
+	for(int i=0;i<3;i++)
+		for (int j = 0;j < 3;j++)
+		{
+			brr[0][i] += (int)(arr[2 * j + 1][4 * i + 2]);
+			brr[1][i] += (int)(arr[2 * i + 1][4 * j + 2]);
+		}
+	brr[2][0]= arr[1][2] + arr[3][6] + arr[5][10];
+	brr[2][1]= arr[5][2] + arr[3][6] + arr[1][10];
+	int a = 0;//如果同时出现两路要堵的话，就不再随机了，还可以再优化
+	a = AIplug(brr, arr, 'o');
+	if (a == 1)
+		{
+			(*p)++;
+			printf("computer选择下到这里\n");
+			output(arr);
+			return;
+	    }
+	a = AIplug(brr, arr, 'x');
+	if (a == 0)random(arr, p);
+	else if (a == 1)
+	{
+		(*p)++;
+		printf("computer选择下到这里\n");
+		output(arr);
+	}
+}
+void gamebody(char arr[10][15])
+{
+	int sum = 0;
+	int b;
+	int* p = &sum;
+	srand(time(NULL));
+	int a = choose();//1是random模式，2是AI模式
+	output(arr);
+	if (a == 1)
+		while (1)
+		{
+			player(arr, p);
+			b = judge(arr, sum);
+			if (b != 2)break;
+			random(arr, p);
+			b = judge(arr, sum);
+			if (b != 2)break;
+		}
+	else if (a == 2)
+	{
+		while (1)
+		{
+			player(arr, p);
+			b = judge(arr, sum);
+			if (b != 2)break;
+			AI(arr, p);
+			b = judge(arr, sum);
+			if (b != 2)break;
+		}
+	}
+	if (b == 0)printf("游戏结束，平局");
+	else if (b == -1)printf("游戏结束，computer win");
+	else if (b == 1)printf("游戏结束，you win!!!");
+	return;
+}
+void random(char arr[10][15], int* p)//random模式下的computer回合
+{
+	int x, y;
+	while (1)
+	{
+		x = rand() % 3 + 1;
+		y = rand() % 3 + 1;
+		if (arr[2 * y - 1][4 * x - 2] != ' ')continue;//防止重复下
+		break;
+	}
+	arr[2 * y - 1][4 * x - 2] = 'o';
+	(*p)++;
+	printf("computer选择下到这里\n");
+	output(arr);
+}
+void player(char arr[10][15], int* p)//玩家回合
+{
+	int x, y;
+	while (1)
+	{
+		printf("请输入坐标:");
+		scanf("%d %d", &x, &y);
+		if (x > 3 || x < 1 || y>3 || y < 1)//防止越界
+		{
+			printf("输入超限，请重新输入\n");
+			continue;
+		}
+		if (arr[2 * y - 1][4 * x - 2] != ' ')//防止重复下
+		{
+			printf("该格已被占，请重新输入\n");
+			continue;
+		}
+		break;
+	}
+	arr[2 * y - 1][4 * x - 2] = 'x';
+	(*p)++;
+	output(arr);
+}
+int judge(char arr[10][15], int sum)//判断游戏是否胜利或终止
+{
+	int a = (int)('x' + 'x' + 'x');
+	int b = (int)('o' + 'o' + 'o');
+	int x1 = arr[1][2] + arr[3][2] + arr[5][2];
+	int x2 = arr[1][6] + arr[3][6] + arr[5][6];
+	int x3 = arr[1][10] + arr[3][10] + arr[5][10];
+	int y1 = arr[1][2] + arr[1][6] + arr[1][10];
+	int y2 = arr[3][2] + arr[3][6] + arr[3][10];
+	int y3 = arr[5][2] + arr[5][6] + arr[5][10];
+	int z1 = arr[1][2] + arr[3][6] + arr[5][10];
+	int z2 = arr[5][2] + arr[3][6] + arr[1][10];
+	if (x1 == a || x2 == a || x3 == a ||y1 == a || y2 == a || y3 == a ||
+		z1 == a || z2 == a)return 1;
+	if (x1 == b || x2 == b || x3 == b ||y1 == b || y2 == b || y3 == b ||
+		z1 == b || z2 == b)return -1;
+	if (sum == 9)return 0;
+	return 2;
+}
+int choose()//选择模式
+{
+	while (1)
+	{
+		printf("请选择模式：\n");
+		printf("简单模式：请输入1\n");
+		printf("AI模式：请输入2\n");
+		int a;
+		scanf("%d", &a);
+		if (a == 1 || a == 2)return a;
+		else printf("输入错误，请重试\n");
+	}
+}
+void output(char arr[10][15])//打印棋盘
+{
+	for (int i = 0;i < 7;i++)
+	{
+		for (int j = 0;j < 13;j++)
+			printf("%c", arr[i][j]);
+		printf("\n");
+	}
+}
+void origin(char arr[10][15])//初始化棋盘
+{
+	for (int i = 0;i < 7;i = i + 2)
+		for (int j = 0;j < 13;j++)
+		{
+			if (j % 2 == 0)arr[i][j] = '*';
+			else arr[i][j] = ' ';
+		}
+	for (int i = 1;i < 7;i = i + 2)
+		for (int j = 0;j < 13;j++)
+		{
+			if (j % 4 == 0)arr[i][j] = '*';
+			else arr[i][j] = ' ';
+		}
+}
