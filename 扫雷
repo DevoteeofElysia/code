@@ -1,0 +1,222 @@
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<time.h>
+#define row 9
+#define col 9
+#define lei 10
+#define row2 row+2
+#define col2 col+2
+static int sum = 0;
+void bomb(char arr[row2][col2], int r, int c, char set);
+void output(char arr[row2][col2]);
+void judge(char arr[row2][col2], char brr[row2][col2]);
+int count(char arr[row2][col2], int x, int y);
+void expand(char arr[row2][col2], char brr[row2][col2], int x, int y);
+void protect(char arr[row2][col2], char brr[row2][col2], int x, int y);
+void flag(char brr[row2][col2]);
+void flag0(char brr[row2][col2]);
+void begin();
+
+int main()
+{
+	begin();
+	char arr[row2][col2];//存储雷的信息
+	char brr[row2][col2];//要打印的棋盘
+	memset(arr, '0', sizeof(arr));//初始化两张棋盘
+	memset(brr, '*', sizeof(brr));
+	bomb(arr, row2, col2, '1');//本来要让设定值能改写的，结果函数套用，set改不了了
+	judge(arr, brr);
+	return 0;
+}
+
+void flag(char brr[row2][col2])
+{
+	int a, b;
+	while (1)
+	{
+		printf("请输入要标记的坐标：");
+		if (scanf("%d %d", &b, &a) != 2) return;
+		if (a < 1 || a > row || b < 1 || b > col)
+		{
+			printf("\a标记超限\n"); 
+			continue;
+		}
+		if (brr[a][b] != '*')
+		{
+			printf("\a已排查或标记过，不必标记\n"); 
+			continue;
+		}
+		brr[a][b] = 'x';
+		return;
+	}
+}
+void flag0(char brr[row2][col2])
+{
+	int a, b;
+	while (1)
+	{
+		printf("请输入要消除标记的坐标：");
+		if (scanf("%d %d", &b, &a) != 2) return;
+		if (a < 1 || a > row || b < 1 || b > col)
+		{
+			printf("\a标记超限\n"); 
+			continue;
+		}
+		if (brr[a][b] != 'x')
+		{
+			printf("\a尚未标记，无法消除\n");
+			continue;
+		}
+		brr[a][b] = '*';
+		return;
+	}
+}
+void protect(char arr[row2][col2], char brr[row2][col2], int x,int y)
+{
+	int a,b;
+	while (1)
+	{
+		a = rand() % (row2 - 2) + 1;
+		b = rand() % (col2 - 2) + 1;
+		if(arr[a][b] == '0')
+		{
+			arr[a][b] = '1';
+			break;
+		}
+	}
+	arr[x][y] = '0';
+	expand(arr, brr, x, y);
+}
+void expand(char arr[row2][col2], char brr[row2][col2], int x, int y)
+{
+	if (x < 1 || x > row || y < 1 || y > col)return;  // 先挡边界
+	if (brr[x][y] != '*' && brr[x][y] != 'x')return;                      // 翻过的跳过
+	int a = count(arr, x, y);
+	brr[x][y] = (char)(a + '0');
+	sum++;
+	if (a != 0)return;                                // 周围有雷，到此为止
+	for (int i = -1;i < 2;i++)
+	{
+		for (int j = -1;j < 2;j++)
+		{
+			expand(arr, brr, x + i, y + j);
+		}
+	}
+}
+int count(char arr[row2][col2], int x, int y)//计算周遭雷数
+{
+	int sum0 = (int)(((arr[x - 1][y - 1]) - '0') + ((arr[x - 1][y]) - '0')
+		+ ((arr[x - 1][y + 1]) - '0') + ((arr[x][y - 1]) - '0') + ((arr[x][y + 1]) - '0')
+		+ ((arr[x + 1][y - 1]) - '0') + ((arr[x + 1][y]) - '0') + ((arr[x + 1][y + 1]) - '0'));
+	return sum0;
+}
+void judge(char arr[row2][col2], char brr[row2][col2])//判断是否为雷点并决定游戏进程
+{
+	
+	printf("游戏开始！\n");
+	while (sum < row * col - lei)
+	{
+		int x, y;
+		output(brr);
+		printf("请输入要点击的坐标：");
+		scanf("%d %d", &y, &x);
+		if (x == -1 && y == -1)
+		{
+			flag(brr);
+			continue;
+		}
+		if (x == -2 && y == -2)
+		{
+			flag0(brr);
+			continue;
+		}
+		if (x >= 1 && x <= row && y >= 1 && y <= col)//防止越界
+		{
+			if (brr[x][y] != '*' && brr[x][y] != 'x')
+			{
+				printf("\a已排查过，不必重复排查\n");
+			}
+			else if (arr[x][y] == '1')
+			{
+				if (sum == 0)
+				{
+					protect(arr, brr, x, y);//首项保护
+					printf("\n");
+					continue;
+				}
+				printf("\a游戏失败\n");
+				output(arr);
+				return;
+			}
+			else
+			{
+				expand(arr, brr, x, y);
+			}
+		}
+		else
+		{
+			printf("\a输入超限，请重新输入\n");
+		}
+		printf("\n");
+	}
+	printf("游戏胜利！\n");
+	for (int i = 0;i < 6;i++)printf("你真棒！\n");
+}
+void output(char arr[row2][col2])//打印表盘
+{
+	printf("%d ", 0);
+	for (int i = 1;i <= row;i++)
+	{
+		printf("%d ", i);
+	}
+	printf("\n");
+	for (int i = 1;i <= row;i++)
+	{
+		printf("%d ", i);
+		for (int j = 1;j <= col;j++)
+		{
+			printf("%c ", arr[i][j]);
+		}
+		printf("\n");
+	}
+}
+void bomb(char arr[row2][col2], int r, int c, char set)//产生并存储雷区
+{
+	srand(time(NULL));
+	for (int i = 0;i < lei;i++)
+	{
+		int x = rand() % (r - 2) + 1;
+		int y = rand() % (c - 2) + 1;
+		if (arr[x][y] == set)
+		{
+			i--;
+			continue;
+		}
+		else
+		{
+			arr[x][y] = set;
+		}
+	}
+}
+void begin()
+{
+	printf("规则说明：\n");
+	printf("输入时请按照：“数字x轴坐标+空格+数字y轴坐标”的格式进行输入\n");
+	printf("‘*’表示该点未知,‘x’表示该点被标记\n");
+	printf("出现数字则表示该点周围一圈的雷数\n");
+	printf("如果想要打上雷的标记，请在坐标处输入-1 -1\n");
+	printf("如果想消除雷的标记，请在坐标处输入-2 -2\n");
+	printf("如果想要开始请输入“begin”:\n");
+	char crr[10];
+	while (1)
+	{
+		scanf("%10s", crr);
+		if (strcmp(crr, "begin") == 0)
+		{
+			printf("游戏愉快\n");
+			break;
+		}
+		else printf("输入错误，重新输入或关闭窗口结束游戏\n");
+	}
+}
